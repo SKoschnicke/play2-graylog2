@@ -7,7 +7,8 @@ To use this module, add the following dependency to your build.sbt/Build.scala f
 TODO: publish to maven central
 
 In your application.conf you can set a couple of entries to configure the behavior of the appender:
-
+  
+    app.graylog2.enable=true                        # enable graylog2 play plugin (overall). It will override access log settings
     graylog2.appender.host="127.0.0.1:12201"        # the graylog2 server to send logs to (its GELF TCP input)
     graylog2.appender.sourcehost="example.org"      # string to use as "source" field of the GELF messages
     graylog2.appender.queue-size=512                # the number of logged, but unsent log messages, stored in memory
