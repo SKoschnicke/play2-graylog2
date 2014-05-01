@@ -58,10 +58,19 @@ public class Graylog2Plugin extends Plugin {
     private Graylog2Plugin.ReconnectRunnable reconnector;
     private final Long reconnectInterval;
 
+    private final boolean isOverallLogEnabled;
+
     public Graylog2Plugin(Application app) {
         final Configuration config = app.configuration();
 
-        accessLogEnabled = config.getBoolean("graylog2.appender.send-access-log", false);
+        isOverallLogEnabled = config.getBoolean("app.graylog2.enable", true);
+        boolean tmpAccessLogEnabled = config.getBoolean("graylog2.appender.send-access-log", false);
+        if (!isOverallLogEnabled) {
+          tmpAccessLogEnabled = false;  
+        }
+        log.info("Graylog2Plugin: app.graylog2.enable - " + isOverallLogEnabled);
+
+        accessLogEnabled = tmpAccessLogEnabled;
         queueCapacity = config.getInt("graylog2.appender.queue-size", 512);
         reconnectInterval = config.getMilliseconds("graylog2.appender.reconnect-interval", 500L);
         connectTimeout = config.getMilliseconds("graylog2.appender.connect-timeout", 1000L);
@@ -97,6 +106,7 @@ public class Graylog2Plugin extends Plugin {
 
     @Override
     public void onStart() {
+        if (this.isOverallLogEnabled) {
         bootstrap = new ClientBootstrap(
                 new OioClientSocketChannelFactory(
                         Executors.newCachedThreadPool()));
@@ -125,6 +135,7 @@ public class Graylog2Plugin extends Plugin {
         gelfAppender.start();
 
         rootLogger.addAppender(gelfAppender);
+        }
     }
 
     public ChannelFuture reconnect() {
@@ -138,9 +149,11 @@ public class Graylog2Plugin extends Plugin {
 
     @Override
     public void onStop() {
+      if (this.isOverallLogEnabled) {
         if (gelfAppender != null) gelfAppender.stop();
         if (handler != null) handler.stop();
         if (channelFuture.getChannel()!= null) channelFuture.getChannel().close().awaitUninterruptibly();
+      }
     }
 
     public GelfAppenderHandler getGelfHandler() {
